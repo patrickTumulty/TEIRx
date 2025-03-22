@@ -1,6 +1,6 @@
-DROP DATABASE IF EXISTS `reviewdb`;
-CREATE DATABASE `reviewdb`;
-USE `reviewdb`;
+DROP DATABASE IF EXISTS `teirxdb`;
+CREATE DATABASE `teirxdb`;
+USE `teirxdb`;
 
 CREATE TABLE users (
 	user_id INT NOT NULL AUTO_INCREMENT,
@@ -8,6 +8,6 @@ CREATE TABLE users (
     lastname VARCHAR(50),
     date_of_birth DATE,
     zipcode VARCHAR(5),
-    email VARCHAR(254)
+    email VARCHAR(254),
     PRIMARY KEY(user_id)
 );
