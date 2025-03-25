@@ -18,11 +18,13 @@ type Person struct {
 }
 
 type User struct {
-	FirstName   string
-	LastName    string
-	DateOfBirth string // yyyy-MM-dd
-	ZipCode     string
-	Email       string
+	FirstName    string
+	LastName     string
+	DateOfBirth  string // yyyy-MM-dd
+	ZipCode      string
+	Email        string
+	PasswordHash string
+	Reputation   int
 }
 
 type GinLogForwarder struct{}

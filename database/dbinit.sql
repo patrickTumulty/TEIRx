@@ -8,6 +8,8 @@ CREATE TABLE users (
     lastname VARCHAR(50) NOT NULL,
     date_of_birth DATE NOT NULL,
     zipcode VARCHAR(5) NOT NULL,
-    email VARCHAR(254) UNIQUE,
+    email VARCHAR(254) UNIQUE, 
+    password_hash VARCHAR(128),
+    reuptation INT NOT NULL,
     PRIMARY KEY(user_id)
 );
