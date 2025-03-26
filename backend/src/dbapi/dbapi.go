@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync"
 	"teirxserver/src/cfg"
+	"teirxserver/src/security"
 	"teirxserver/src/txlog"
 )
-
 
 var dbConnection *DbConnection
 var once sync.Once
@@ -17,14 +17,16 @@ type DbConnection struct {
 }
 
 func GetDBConnection() *DbConnection {
-    appConfig := cfg.GetAppConfig()
+	appConfig := cfg.GetAppConfig()
 
-    once.Do(func() {
-        dbInfo := appConfig.Database
-        dbConnection = newDbConnection(dbInfo.User, dbInfo.Password, dbInfo.Ip, dbInfo.Port, dbInfo.DbName)
-    })
+    // TODO make this blocking
+	once.Do(func() {
+        txlog.TxLogInfo("Openning database")
+		dbInfo := appConfig.Database
+		dbConnection = newDbConnection(dbInfo.User, dbInfo.Password, dbInfo.Ip, dbInfo.Port, dbInfo.DbName)
+	})
 
-    return dbConnection
+	return dbConnection
 }
 
 func newDbConnection(user string, password string, ip string, port string, dbname string) *DbConnection {
@@ -32,8 +34,8 @@ func newDbConnection(user string, password string, ip string, port string, dbnam
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-        txlog.TxLogError("Unable to open MySQL connection: %s", err)
-        return nil
+		txlog.TxLogError("Unable to open MySQL connection: %s", err)
+		return nil
 	}
 
 	dbConn := DbConnection{
@@ -43,16 +45,27 @@ func newDbConnection(user string, password string, ip string, port string, dbnam
 	return &dbConn
 }
 
-
-	// query := "INSERT INTO users (firstname, lastname, date_of_birth, zipcode, email) VALUES (?, ?, ?, ?, ?);"
-	// _, err = dbConn.Db.Exec(query, user.FirstName, user.LastName, user.DateOfBirth, user.ZipCode, user.Email)
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-	//
-
 func (db *DbConnection) CloseDbConnection() {
 	db.Db.Close()
 }
 
+func RegisterUser(username string, firstname string, lastname string, email string, password string) error {
+
+	hash, err := security.EncodeArgon2Hash(password, security.DefaultArgon2Params())
+	if err != nil {
+		return err
+	}
+    
+    txlog.TxLogInfo(hash)
+
+	query := "INSERT INTO users (username, firstname, lastname, email, password_hash) VALUES (?, ?, ?, ?, ?);"
+    con := GetDBConnection()
+    txlog.TxLogInfo("%s", con == nil)
+	_, err = GetDBConnection().Db.Exec(query, username, firstname, lastname, email, hash)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
