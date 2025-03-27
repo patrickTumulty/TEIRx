@@ -92,7 +92,7 @@ func txLog(level int, format string, args ...any) {
 	}
 	now := time.Now().Format("2006-01-02 15:04:05.000")
 	file, line := getCallerInfo()
-    txLogger.Printf("%s", fmt.Sprintf("%s [%-5s:%15s:%d] "+format, append([]any{now, LogLevel2Str(level), file, line}, args...)...))
+    txLogger.Printf("%s", fmt.Sprintf("%s %-5s [%15s:%4d] "+format, append([]any{now, LogLevel2Str(level), file, line}, args...)...))
 }
 
 func TxLogInfo(format string, args ...any) {

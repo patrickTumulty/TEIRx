@@ -9,6 +9,6 @@ CREATE TABLE users (
     lastname VARCHAR(50) NOT NULL,
     email VARCHAR(254) UNIQUE, 
     password_hash VARCHAR(128),
-    reputation INT NOT NULL,
+    reputation INT NOT NULL DEFAULT 0,
     PRIMARY KEY(user_id)
 );

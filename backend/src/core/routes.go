@@ -30,25 +30,20 @@ type RegisterUserRequest struct {
 	Firstname    string `json:"firstname"`
 	Lastname     string `json:"lastname"`
 	Email        string `json:"email"`
-	PasswordHash string `json:"passwordHash"`
+	PasswordHash string `json:"password"`
 }
 
 func handleRegisterUser(c *gin.Context) {
 	var requestBody RegisterUserRequest
 
-    txlog.TxLogInfo("Handling register user")
-
 	err := c.ShouldBindJSON(&requestBody)
-
-    txlog.TxLogInfo("Got %s", requestBody)
-
 	if err != nil {
 		txlog.TxLogError("Register User Error: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = dbapi.RegisterUser(
+	err = dbapi.GetDBConnection().RegisterUser(
 		requestBody.Username,
 		requestBody.Firstname,
 		requestBody.Lastname,
@@ -57,8 +52,9 @@ func handleRegisterUser(c *gin.Context) {
 	)
 
 	if err != nil {
-        txlog.TxLogDebug("Unable to add user to database: %s", err.Error())
+        txlog.TxLogError("Unable to add user to database: %s", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
 	}
 
     txlog.TxLogInfo("Status OK")

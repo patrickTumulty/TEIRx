@@ -9,22 +9,25 @@ import (
 	"teirxserver/src/txlog"
 )
 
+var dbInitMutex sync.Mutex = sync.Mutex{}
 var dbConnection *DbConnection
-var once sync.Once
 
 type DbConnection struct {
 	Db *sql.DB
 }
 
 func GetDBConnection() *DbConnection {
+
 	appConfig := cfg.GetAppConfig()
 
-    // TODO make this blocking
-	once.Do(func() {
-        txlog.TxLogInfo("Openning database")
+	dbInitMutex.Lock()
+	defer dbInitMutex.Unlock()
+
+	if dbConnection == nil {
+		txlog.TxLogInfo("Openning database")
 		dbInfo := appConfig.Database
 		dbConnection = newDbConnection(dbInfo.User, dbInfo.Password, dbInfo.Ip, dbInfo.Port, dbInfo.DbName)
-	})
+	}
 
 	return dbConnection
 }
@@ -45,27 +48,22 @@ func newDbConnection(user string, password string, ip string, port string, dbnam
 	return &dbConn
 }
 
-func (db *DbConnection) CloseDbConnection() {
+func (db *DbConnection) Close() {
 	db.Db.Close()
 }
 
-func RegisterUser(username string, firstname string, lastname string, email string, password string) error {
+func (db *DbConnection) RegisterUser(username string, firstname string, lastname string, email string, password string) error {
 
 	hash, err := security.EncodeArgon2Hash(password, security.DefaultArgon2Params())
 	if err != nil {
 		return err
 	}
-    
-    txlog.TxLogInfo(hash)
 
 	query := "INSERT INTO users (username, firstname, lastname, email, password_hash) VALUES (?, ?, ?, ?, ?);"
-    con := GetDBConnection()
-    txlog.TxLogInfo("%s", con == nil)
-	_, err = GetDBConnection().Db.Exec(query, username, firstname, lastname, email, hash)
+    _, err = db.Db.Exec(query, username, firstname, lastname, email, hash)
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
-

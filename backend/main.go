@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"teirxserver/src/cfg"
 	"teirxserver/src/core"
 	"teirxserver/src/dbapi"
@@ -48,6 +53,41 @@ func corsMiddleware() gin.HandlerFunc {
 	}
 }
 
+type Server struct {
+	httpServer *http.Server
+}
+
+func NewHTTPServer() *Server {
+	gin.DisableConsoleColor()
+	// gin.DefaultWriter = GinLogForwarder{}
+	router := gin.Default()
+	router.Use(corsMiddleware())
+	core.RegisterRoutes(router)
+	return &Server{
+		httpServer: &http.Server{
+			Addr:    "localhost:8080",
+			Handler: router,
+		},
+	}
+}
+
+func (s *Server) Start() {
+	go func() {
+        txlog.TxLogInfo("Starting HTTP server: %s", s.httpServer.Addr)
+        err := s.httpServer.ListenAndServe() 
+		if err != http.ErrServerClosed {
+			txlog.TxLogError("Http server closed: %s", err)
+		}
+	}()
+}
+
+func (s *Server) Stop() {
+    err := s.httpServer.Shutdown(context.Background())
+    if err != nil {
+        txlog.TxLogError("Error shutting down HTTP server: %s", err.Error())
+    }
+}
+
 func main() {
 
 	err := cfg.LoadAppConfig("teirxcfg.json")
@@ -67,16 +107,23 @@ func main() {
 
 	txlog.TxLogInfo("**** Teirx Server Starting")
 
-	gin.DisableConsoleColor()
-	// gin.DefaultWriter = GinLogForwarder{}
-	router := gin.Default()
-	router.Use(corsMiddleware())
+    signalChan := make(chan os.Signal, 1)
+    signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+    signalRcvChan := make(chan bool, 1)
+    go func() {
+        sig := <-signalChan
+        txlog.TxLogInfo("Recieved Signal: %s", sig)
+        signalRcvChan <- true
+    }()
 
-	core.RegisterRoutes(router)
+    srv := NewHTTPServer()
+    srv.Start()
 
-	router.Run("localhost:8080")
+    <-signalRcvChan
 
 	txlog.TxLogInfo("**** Teirx Server Closing")
 
-	dbapi.GetDBConnection().CloseDbConnection()
+    srv.Stop()
+    
+	dbapi.GetDBConnection().Close()
 }
