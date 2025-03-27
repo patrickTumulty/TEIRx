@@ -52,6 +52,20 @@ func (db *DbConnection) Close() {
 	db.Db.Close()
 }
 
+func (db *DbConnection) RetrievePasswordHash(usernameOrEmail string) (string, error) {
+	query := "SELECT password_hash FROM users WHERE email = ? OR username = ? LIMIT 1"
+	stmt, err := db.Db.Prepare(query)
+	if err != nil {
+        return "", err
+	}
+	var passwordHash string
+	err = stmt.QueryRow(usernameOrEmail, usernameOrEmail).Scan(&passwordHash)
+	if err != nil {
+		return "", err
+	}
+    return passwordHash, nil
+}
+
 func (db *DbConnection) RegisterUser(username string, firstname string, lastname string, email string, password string) error {
 
 	hash, err := security.EncodeArgon2Hash(password, security.DefaultArgon2Params())
@@ -60,7 +74,7 @@ func (db *DbConnection) RegisterUser(username string, firstname string, lastname
 	}
 
 	query := "INSERT INTO users (username, firstname, lastname, email, password_hash) VALUES (?, ?, ?, ?, ?);"
-    _, err = db.Db.Exec(query, username, firstname, lastname, email, hash)
+	_, err = db.Db.Exec(query, username, firstname, lastname, email, hash)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package security
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
@@ -9,6 +10,8 @@ import (
 
 	"golang.org/x/crypto/argon2"
 )
+
+var ErrPasswordsDoNotMatch = errors.New("Password match failed")
 
 func generateRandomBytes(n uint32) ([]byte, error) {
 	b := make([]byte, n)
@@ -48,13 +51,29 @@ func DefaultArgon2Params() *Argon2Params {
 	}
 }
 
-func EncodeArgon2Hash(str string, p *Argon2Params) (string, error) {
-	salt, err := generateRandomBytes(p.SaltLen)
-	if err != nil {
-		return "", errors.New(fmt.Sprintf("Error generating random salt: %s", err))
+func Argon2Hash(str string, p *Argon2Params, saltParam []byte) ([]byte, []byte, error) {
+	var salt []byte
+	var err error
+
+	if saltParam == nil {
+		salt, err = generateRandomBytes(p.SaltLen)
+		if err != nil {
+			return nil, nil, errors.New(fmt.Sprintf("Error generating random salt: %s", err))
+		}
 	}
 
+	salt = saltParam
+
 	hash := argon2.IDKey([]byte(str), salt, p.Iterations, p.MemoryKiB, p.Parallelism, p.KeyLen)
+
+	return salt, hash, nil
+}
+
+func EncodeArgon2Hash(str string, p *Argon2Params) (string, error) {
+	salt, hash, err := Argon2Hash(str, p, nil)
+	if err != nil {
+		return "", err
+	}
 
 	b64Salt := base64.RawStdEncoding.EncodeToString(salt)
 	b64Hash := base64.RawStdEncoding.EncodeToString(hash)
@@ -95,4 +114,22 @@ func DecodeArgon2Hash(encodedHash string) (p *Argon2Params, salt []byte, hash []
 	p.KeyLen = uint32(len(hash))
 
 	return p, salt, hash, nil
+}
+
+func AuthenticatePassword(password string, encodedHash string) error {
+	params, dbSalt, dbHash, err := DecodeArgon2Hash(encodedHash)
+	if err != nil {
+		return err
+	}
+
+	_, hash, err := Argon2Hash(password, params, dbSalt)
+	if err != nil {
+		return err
+	}
+
+	if !bytes.Equal(dbHash, hash) {
+		return ErrPasswordsDoNotMatch
+	}
+
+	return nil
 }
