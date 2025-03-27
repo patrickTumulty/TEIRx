@@ -28,7 +28,7 @@ func handleLogin(c *gin.Context) {
 	if err != nil {
 		txlog.TxLogError("Unable to retrieve user info: %s", err.Error())
 		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "no user found"})
+			c.JSON(http.StatusNoContent, gin.H{"error": "no user found"})
 		} else {
 			c.Status(http.StatusInternalServerError)
 		}
@@ -43,6 +43,7 @@ func handleLogin(c *gin.Context) {
         } else {
             c.Status(http.StatusInternalServerError)
         }
+        return
     }
 
 	c.JSON(http.StatusOK, gin.H{"token": "0xCAFE"})
