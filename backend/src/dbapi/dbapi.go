@@ -52,19 +52,68 @@ func (db *DbConnection) Close() {
 	db.Db.Close()
 }
 
-func (db *DbConnection) RetrievePasswordHash(usernameOrEmail string) (string, error) {
-	query := "SELECT password_hash FROM users WHERE email = ? OR username = ? LIMIT 1"
+func (db *DbConnection) RetrievePasswordHashAndID(usernameOrEmail string) (string, int, error) {
+	query := "SELECT user_id, password_hash FROM users WHERE email = ? OR username = ? LIMIT 1"
+	stmt, err := db.Db.Prepare(query)
+	if err != nil {
+        return "", -1, err
+	}
+	var passwordHash string
+    var userID int
+	err = stmt.QueryRow(usernameOrEmail, usernameOrEmail).Scan(&userID, &passwordHash)
+	if err != nil {
+		return "", -1, err
+	}
+    return passwordHash, userID, nil
+}
+
+
+func (db *DbConnection) StoreAuthToken(userId int, authToken string) error {
+	query := "INSERT INTO session_tokens (user_id, session_token) VALUES (?, ?);"
+    _, err := db.Db.Exec(query, userId, authToken)
+	if err != nil {
+		return err
+	}
+    return nil
+}
+
+func (db *DbConnection) RemoveAuthToken(userId int) error {
+    query := "DELETE FROM session_tokens WHERE user_id = ?"
+    _, err := db.Db.Exec(query, userId)
+    if err != nil {
+        return err
+    }
+    return nil
+}
+
+func (db *DbConnection) GetAuthTokenFromUserID(userId int) (string, error) {
+	query := "SELECT session_token FROM session_tokens WHERE user_id = ? LIMIT 1"
 	stmt, err := db.Db.Prepare(query)
 	if err != nil {
         return "", err
 	}
-	var passwordHash string
-	err = stmt.QueryRow(usernameOrEmail, usernameOrEmail).Scan(&passwordHash)
+    var authToken string
+	err = stmt.QueryRow(userId).Scan(&authToken)
 	if err != nil {
 		return "", err
 	}
-    return passwordHash, nil
+    return authToken, nil
 }
+
+func (db *DbConnection) GetUserIDFromAuthToken(authToken string) (int, error) {
+	query := "SELECT user_id FROM session_tokens WHERE session_token = ? LIMIT 1"
+	stmt, err := db.Db.Prepare(query)
+	if err != nil {
+        return -1, err
+	}
+    var userID int
+	err = stmt.QueryRow(authToken).Scan(&userID)
+	if err != nil {
+		return -1, err
+	}
+    return userID, nil
+}
+
 
 func (db *DbConnection) RegisterUser(username string, firstname string, lastname string, email string, password string) error {
 

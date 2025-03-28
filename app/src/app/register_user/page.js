@@ -63,7 +63,7 @@ export default function RegisterUser() {
                     placeholder="Email"
                 />
                 <div className='side-by-side'>
-                    <label className='l' >First Name
+                    <label>First Name
                         <input
                             type="text"
                             id="firstname"

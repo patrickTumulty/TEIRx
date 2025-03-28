@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -19,8 +20,15 @@ func generateRandomBytes(n uint32) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return b, nil
+}
+
+func GenerateAuthToken() (string, error) {
+    bytes, err := generateRandomBytes(32)
+    if err != nil {
+        return "", err
+    } 
+    return hex.EncodeToString(bytes), nil
 }
 
 type Argon2Alg struct {

@@ -71,3 +71,9 @@ body {
 .side-by-side input {
     margin-top: 6px;
 }
+
+.error-label {
+    color: red;
+    font-weight: normalo
+
+}
