@@ -24,6 +24,11 @@ type LoggingInfo struct {
 type AppConfig struct {
 	Database DbInfo      `json:"database"`
 	Logging  LoggingInfo `json:"logging"`
+	Keys     Keys        `json:"keys"`
+}
+
+type Keys struct {
+	Omdb string `json:"omdb"`
 }
 
 func NewAppConfig() AppConfig {
@@ -37,6 +42,9 @@ func NewAppConfig() AppConfig {
 		},
 		LoggingInfo{
 			"",
+			"",
+		},
+		Keys{
 			"",
 		},
 	}
