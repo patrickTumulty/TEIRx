@@ -3,7 +3,9 @@ package core
 import (
 	"database/sql"
 	"net/http"
+	"strings"
 	"teirxserver/src/dbapi"
+	"teirxserver/src/omdb"
 	"teirxserver/src/security"
 	"teirxserver/src/txlog"
 
@@ -12,6 +14,10 @@ import (
 
 type LogoutRequest struct {
 	AuthToken string `json:"token"`
+}
+
+func IsError(err error) bool {
+	return err != nil && err != sql.ErrNoRows
 }
 
 func handleLogout(c *gin.Context) {
@@ -133,8 +139,61 @@ func handleRegisterUser(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+func handleSearch(c *gin.Context) {
+    query := strings.TrimSpace(c.DefaultQuery("query", ""))
+    if query == "" {
+        c.Status(http.StatusBadRequest)
+        return 
+    }
+
+	// if strings.HasPrefix(query, "tt") { // Maybe IMDb ID
+	// 	movie, err := dbapi.GetDBConnection().GetMovieFromID(query)
+	// 	if err != nil {
+	// 		if err != sql.ErrNoRows {
+	// 			txlog.TxLogError("Error finding movie from ID %s", query)
+	// 		}
+	// 	} else {
+	// 		c.JSON(http.StatusOK, gin.H{"results": []gin.H{
+	// 			movie.ToJSON(),
+	// 		}})
+	// 		return
+	// 	}
+	// }
+	//
+	// movies, err := dbapi.GetDBConnection().GetMoviesFromTitleOrID(query, 15)
+	// if err != nil {
+	// 	if err != sql.ErrNoRows {
+	// 		txlog.TxLogError("Error finding movies from ID or Title '%s'", query)
+	// 	}
+	// } else {
+ //        json_movies := []gin.H{}
+ //        for _, m := range movies {
+ //            json_movies = append(json_movies, m.ToJSON())
+ //        }
+	// 	c.JSON(http.StatusOK, gin.H{"results": json_movies})
+	// 	return
+	// }
+
+    // No we need to query OMDb to fill in gaps in our database
+
+    items, err := omdb.OmdbSearch(query)
+    if err != nil {
+        txlog.TxLogError("Error searching OMDb: %s", err.Error())
+        c.Status(http.StatusInternalServerError)
+        return
+    }
+
+    jsonItems := []gin.H{}
+    for _, item := range items {
+        jsonItems = append(jsonItems, item.ToJson())
+    } 
+
+	c.JSON(http.StatusOK, jsonItems)
+}
+
 func RegisterRoutes(router *gin.Engine) {
 	router.POST("/login", handleLogin)
 	router.POST("/logout", handleLogout)
 	router.POST("/register-user", handleRegisterUser)
+	router.GET("/search", handleSearch)
 }

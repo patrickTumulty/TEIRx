@@ -25,6 +25,7 @@ func NewHTTPServer() *Server {
 	// gin.DefaultWriter = GinLogForwarder{}
 	router := gin.Default()
 	router.Use(corsMiddleware())
+	router.Static("/images", "./images")
 	RegisterRoutes(router)
 	return &Server{
 		httpServer: &http.Server{
@@ -67,14 +68,16 @@ func corsMiddleware() gin.HandlerFunc {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-			c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
+			c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 		}
 
+		// Handle preflight OPTIONS request
 		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
+			c.AbortWithStatus(http.StatusNoContent) 
 			return
 		}
 
+		// Continue with the request
 		c.Next()
 	}
 }

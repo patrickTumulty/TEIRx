@@ -22,9 +22,14 @@ type LoggingInfo struct {
 }
 
 type AppConfig struct {
-	Database DbInfo      `json:"database"`
-	Logging  LoggingInfo `json:"logging"`
-	Keys     Keys        `json:"keys"`
+	Database  DbInfo      `json:"database"`
+	Logging   LoggingInfo `json:"logging"`
+	Keys      Keys        `json:"keys"`
+	Resources Resources   `json:"resources"`
+}
+
+type Resources struct {
+	LocalStaticRoot string `json:"local_static_root"`
 }
 
 type Keys struct {
@@ -41,11 +46,14 @@ func NewAppConfig() AppConfig {
 			"",
 		},
 		LoggingInfo{
-			"",
-			"",
+			Level:    "INFO",
+			Filepath: "teirx.log",
 		},
 		Keys{
 			"",
+		},
+		Resources{
+			".", // Default
 		},
 	}
 }
