@@ -1,6 +1,7 @@
 "use client"; // Ensure this is a Client Component
 
 import { useRouter } from "next/navigation";
+import SearchComponent from "./search/search_component";
 
 export default function Home() {
 
@@ -14,16 +15,13 @@ export default function Home() {
         router.push("/register_user")
     };
 
-    const goToSearch = () => {
-        router.push("/search")
-    };
 
     return (
         <div>
             <h1>TEIRx</h1>
             <button onClick={goToLogin}>Login</button>
             <button onClick={goToRegister}>Register</button>
-            <button onClick={goToSearch}>Search</button>
+            <SearchComponent/>
         </div>
     );
 }
