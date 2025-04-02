@@ -139,26 +139,42 @@ func handleRegisterUser(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+func handleGetFilm(c *gin.Context) {
+
+    id := strings.TrimSpace(c.DefaultQuery("id", ""))
+    if id == "" {
+        c.Status(http.StatusBadRequest)
+        return 
+    }
+
+
+	film, err := omdb.OmdbGetByID(id)
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	filmData := make(map[string]any)
+
+	filmData["title"] = film.Title
+	filmData["plot"] = film.Plot
+	filmData["rated"] = film.Rated
+	filmData["year"] = film.Year
+	filmData["poster"] = film.Poster
+
+	c.JSON(http.StatusOK, filmData)
+}
+
 func handleSearch(c *gin.Context) {
+
+	txlog.TxLogInfo("Searching...")
+
     query := strings.TrimSpace(c.DefaultQuery("query", ""))
     if query == "" {
         c.Status(http.StatusBadRequest)
         return 
     }
 
-	// if strings.HasPrefix(query, "tt") { // Maybe IMDb ID
-	// 	movie, err := dbapi.GetDBConnection().GetMovieFromID(query)
-	// 	if err != nil {
-	// 		if err != sql.ErrNoRows {
-	// 			txlog.TxLogError("Error finding movie from ID %s", query)
-	// 		}
-	// 	} else {
-	// 		c.JSON(http.StatusOK, gin.H{"results": []gin.H{
-	// 			movie.ToJSON(),
-	// 		}})
-	// 		return
-	// 	}
-	// }
 	//
 	// movies, err := dbapi.GetDBConnection().GetMoviesFromTitleOrID(query, 15)
 	// if err != nil {
@@ -196,4 +212,5 @@ func RegisterRoutes(router *gin.Engine) {
 	router.POST("/logout", handleLogout)
 	router.POST("/register-user", handleRegisterUser)
 	router.GET("/search", handleSearch)
+	router.GET("/get-film", handleGetFilm)
 }

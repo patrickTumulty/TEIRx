@@ -15,7 +15,6 @@ export default function Home() {
         router.push("/register_user")
     };
 
-
     return (
         <div>
             <h1>TEIRx</h1>

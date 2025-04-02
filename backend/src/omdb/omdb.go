@@ -17,6 +17,39 @@ type OmdbSearchResponse struct {
 	TotalResults string           `json:"totalResults"`
 }
 
+type OmdbRating struct {
+	Source string `json:"Source"`
+	Value  string `json:"Value"`
+}
+
+type OmdbFilm struct {
+	Title      string       `json:"Title"`
+	Year       string       `json:"Year"`
+	Rated      string       `json:"Rated"`
+	Released   string       `json:"Released"`
+	Runtime    string       `json:"Runtime"`
+	Genre      string       `json:"Genre"`
+	Director   string       `json:"Director"`
+	Writer     string       `json:"Writer"`
+	Actors     string       `json:"Actors"`
+	Plot       string       `json:"Plot"`
+	Language   string       `json:"Language"`
+	Country    string       `json:"Country"`
+	Awards     string       `json:"Awards"`
+	Poster     string       `json:"Poster"`
+	Ratings    []OmdbRating `json:"Ratings"`
+	Metascore  string       `json:"Metascore"`
+	ImdbRating string       `json:"imdbRating"`
+	ImdbVotes  string       `json:"imdbVotes"`
+	ImdbID     string       `json:"imdbID"`
+	Type       string       `json:"Type"`
+	DVD        string       `json:"DVD"`
+	BoxOffice  string       `json:"BoxOffice"`
+	Production string       `json:"Production"`
+	Website    string       `json:"Website"`
+	Response   string       `json:"Response"`
+}
+
 type OmdbSearchItem struct {
 	Title  string `json:"Title"`
 	Year   string `json:"Year"`
@@ -33,6 +66,52 @@ func (item *OmdbSearchItem) ToJson() map[string]any {
 	m["type"] = item.Type
 	m["poster"] = item.Poster
 	return m
+}
+
+func OmdbGetByID(imdbId string) (OmdbFilm, error) {
+	var film OmdbFilm
+
+	appConfig := cfg.GetAppConfig()
+
+	parsedURL, err := url.Parse(OMDB_BASE_URL)
+	if err != nil {
+		txlog.TxLogError("Error parsing OMDb URL: '%s'", err)
+		return film, err
+	}
+
+	params := parsedURL.Query()
+
+	params.Set("apiKey", appConfig.Keys.Omdb)
+	params.Set("type", "movie")
+	params.Set("i", imdbId)
+	params.Set("plot", "full") // "short" (default) or "full"
+
+	parsedURL.RawQuery = params.Encode()
+
+	url := parsedURL.String()
+
+	resp, err := http.Get(url)
+	if err != nil {
+		txlog.TxLogError("Error performing get call: %s: '%s'", url, err)
+		return film, err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		txlog.TxLogError("Error processing OMDb response: %s: '%s'", url, err)
+		return film, err
+	}
+
+	err = json.Unmarshal(body, &film)
+	if err != nil {
+		txlog.TxLogError("Error unmarshalling OMDb response: %s: '%s'", url, err)
+		return film, err
+	}
+
+
+	return film, nil
 }
 
 func OmdbSearch(query string) ([]OmdbSearchItem, error) {

@@ -1,9 +1,9 @@
 
-'use client'; // Use the client directive to use React hooks
+'use client';
 
-import { useEffect, useState } from "react"; // ✅ Import useEffect and useState
-import { TEIRX_SERVER_URL, HttpStatus } from '@/core/global';
+import react from "react";
 import Link from 'next/link';
+import { TeirxApi } from '@/core/teirxapi';
 
 function MovieItem({ data }) {
     return (
@@ -16,40 +16,19 @@ function MovieItem({ data }) {
 
 export default function SearchPage({ query }) {
 
-    const [searchResults, setSearchResults] = useState([])
+    const [searchResults, setSearchResults] = react.useState([])
+    const [loading, setLoading] = react.useState(true)
 
-    async function search() {
-
-        console.log("Searching: " + query)
-
-        const qString = `/search?query=${query}`;
-
-        try {
-            
-
-            const res = await fetch(TEIRX_SERVER_URL + qString, {
-                method: 'GET',
-                headers: {
-                    'content-type': 'application/json'
-                }
-            })
-
-            if (!res.ok) {
-                console.log("Response error")
-                return
-            }
-
-            const data = await res.json();
+    react.useEffect(() => {
+        TeirxApi.search(query).then((data) => {
             setSearchResults(data)
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
-    useEffect(() => {
-        console.log("Search")
-        search()
+            setLoading(false)
+        })
     }, []);
+
+    if (loading) {
+        return <div>Loading... </div>
+    }
 
     return (
         <div>

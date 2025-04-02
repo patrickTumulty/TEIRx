@@ -24,22 +24,6 @@ CREATE TABLE session_tokens (
 
 USE `teirxdb`;
 
-CREATE TABLE movies (
-	imdb_id VARCHAR(15) NOT NULL,
-    title VARCHAR(128) NOT NULL,
-    release_date DATE,
-    genre VARCHAR(255),
-    actors VARCHAR(1024),
-    director VARCHAR(50),
-    writer VARCHAR(512),
-    plot MEDIUMTEXT,
-    poster_image_path VARCHAR(255),
-    media_type ENUM("movie", "series", "episode"),
-    PRIMARY KEY(imdb_id)
-);
-
-USE `teirxdb`;
-
 CREATE TABLE movie_ranks (
     imdb_id VARCHAR(15) NOT NULL,
     s_teir INT NOT NULL DEFAULT 0,

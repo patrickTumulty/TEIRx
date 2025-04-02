@@ -1,12 +1,13 @@
+import FilmInfo from "./film_info";
 
-export default async function Page({ params }) {
+
+export default async function FilmPage({ params }) {
 
     const { film } = await params
 
     return (
         <div>
-            <h1>Movie: {film}</h1>
-            <p>Details about {film}...</p>
+            <FilmInfo filmID={film}/>
         </div>
     );
 }
