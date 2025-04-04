@@ -1,7 +1,7 @@
-DROP DATABASE IF EXISTS `teirxdb`;
-CREATE DATABASE `teirxdb`;
+DROP DATABASE IF EXISTS `redpendb`;
+CREATE DATABASE `redpendb`;
 
-USE `teirxdb`;
+USE `redpendb`;
 
 CREATE TABLE users (
 	user_id INT NOT NULL AUTO_INCREMENT,
@@ -14,7 +14,7 @@ CREATE TABLE users (
     PRIMARY KEY(user_id)
 );
 
-USE `teirxdb`;
+USE `redpendb`;
 
 CREATE TABLE session_tokens (
     user_id INT NOT NULL, 
@@ -22,15 +22,11 @@ CREATE TABLE session_tokens (
     PRIMARY KEY(user_id)
 );
 
-USE `teirxdb`;
+USE `redpendb`;
 
 CREATE TABLE movie_ranks (
     imdb_id VARCHAR(15) NOT NULL,
-    s_teir INT NOT NULL DEFAULT 0,
-    a_teir INT NOT NULL DEFAULT 0,
-    b_teir INT NOT NULL DEFAULT 0,
-    c_teir INT NOT NULL DEFAULT 0,
-    d_teir INT NOT NULL DEFAULT 0,
-    f_teir INT NOT NULL DEFAULT 0,
+    user_id INT NOT NULL UNIQUE,
+    tier ENUM('S', 'A', 'B', 'C', 'D', 'F'),
     PRIMARY KEY(imdb_id)
 );

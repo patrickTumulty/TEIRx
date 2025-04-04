@@ -3,10 +3,11 @@ package dbapi
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"sync"
-	"teirxserver/src/cfg"
-	"teirxserver/src/security"
-	"teirxserver/src/txlog"
+	"pen_daemon/src/cfg"
+	"pen_daemon/src/security"
+	"pen_daemon/src/txlog"
 )
 
 var dbInitMutex sync.Mutex = sync.Mutex{}
@@ -19,13 +20,13 @@ type DbConnection struct {
 func GetDBConnection() *DbConnection {
 
 	appConfig := cfg.GetAppConfig()
+	dbInfo := appConfig.Database
 
 	dbInitMutex.Lock()
 	defer dbInitMutex.Unlock()
 
 	if dbConnection == nil {
-		txlog.TxLogInfo("Openning database")
-		dbInfo := appConfig.Database
+		txlog.TxLogInfo("Openning database connection: %s:%s %s", dbInfo.Ip, dbInfo.Port, dbInfo.DbName)
 		dbConnection = newDbConnection(dbInfo.User, dbInfo.Password, dbInfo.Ip, dbInfo.Port, dbInfo.DbName)
 	}
 
@@ -65,6 +66,41 @@ func (db *DbConnection) RetrievePasswordHashAndID(usernameOrEmail string) (strin
 		return "", -1, err
 	}
 	return passwordHash, userID, nil
+}
+
+type DbFilmRank struct {
+	ImdbID string
+	UserID string
+	Tier   string
+}
+
+func (r *DbFilmRank) GetTierAsRune() rune {
+	if len(r.Tier) != 1 {
+		return 0
+	}
+	return []rune(r.Tier)[0]
+}
+
+func (db *DbConnection) GetFilmRanks(imdbId string) ([]DbFilmRank, error) {
+	var ranks []DbFilmRank
+	rows, err := db.Db.Query("SELECT imdb_id, user_id, tier FROM movie_ranks WHERE imdb_id = ?")
+	if err != nil {
+		return ranks, err
+	}
+	for rows.Next() {
+		var rank DbFilmRank
+		err = rows.Scan(
+			&rank.ImdbID,
+			&rank.UserID,
+			&rank.Tier,
+		)
+		if err != nil {
+			txlog.TxLogError("Unable to parse film rank row to object: %s", err.Error())
+			continue
+		}
+		ranks = append(ranks, rank)
+	}
+	return ranks, nil
 }
 
 func (db *DbConnection) StoreAuthToken(userId int, authToken string) error {

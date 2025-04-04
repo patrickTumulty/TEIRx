@@ -2,12 +2,13 @@ package core
 
 import (
 	"database/sql"
+	"math"
 	"net/http"
+	"pen_daemon/src/dbapi"
+	"pen_daemon/src/omdb"
+	"pen_daemon/src/security"
+	"pen_daemon/src/txlog"
 	"strings"
-	"teirxserver/src/dbapi"
-	"teirxserver/src/omdb"
-	"teirxserver/src/security"
-	"teirxserver/src/txlog"
 
 	"github.com/gin-gonic/gin"
 )
@@ -141,12 +142,13 @@ func handleRegisterUser(c *gin.Context) {
 
 func handleGetFilm(c *gin.Context) {
 
-    id := strings.TrimSpace(c.DefaultQuery("id", ""))
-    if id == "" {
-        c.Status(http.StatusBadRequest)
-        return 
-    }
+	txlog.TxLogInfo("Getting film")
 
+	id := strings.TrimSpace(c.DefaultQuery("id", ""))
+	if id == "" {
+		c.Status(http.StatusBadRequest)
+		return
+	}
 
 	film, err := omdb.OmdbGetByID(id)
 	if err != nil {
@@ -154,13 +156,51 @@ func handleGetFilm(c *gin.Context) {
 		return
 	}
 
-	filmData := make(map[string]any)
+	ranks, err := dbapi.GetDBConnection().GetFilmRanks(id)
+	stats := make(map[rune]int)
 
+	for _, item := range ranks {
+		tier := item.GetTierAsRune()
+		value, ok := stats[tier]
+		if !ok {
+			stats[tier] = 1
+		} else {
+			stats[tier] = value + 1
+		}
+	}
+
+	avg := 0
+	totalRanks := 0
+	for key, value := range stats {
+		totalRanks += value
+		mult := TierStr2Int(key)
+		avg += value * mult
+	}
+
+	tier := int(math.Ceil(float64(avg) / float64(totalRanks)))
+
+	filmStats := make(map[string]any)
+	if totalRanks == 0 {
+		filmStats["rank"] = "Not Yet Ranked"
+	} else {
+		filmStats["rank"] = string(TierInt2Str(tier))
+	}
+
+	filmStats["total_count"] = totalRanks
+	filmStats["s_count"] = stats['S']
+	filmStats["a_count"] = stats['A']
+	filmStats["b_count"] = stats['B']
+	filmStats["c_count"] = stats['C']
+	filmStats["d_count"] = stats['D']
+	filmStats["f_count"] = stats['F']
+
+	filmData := make(map[string]any)
 	filmData["title"] = film.Title
 	filmData["plot"] = film.Plot
 	filmData["rated"] = film.Rated
 	filmData["year"] = film.Year
 	filmData["poster"] = film.Poster
+	filmData["stats"] = filmStats
 
 	c.JSON(http.StatusOK, filmData)
 }
@@ -169,40 +209,23 @@ func handleSearch(c *gin.Context) {
 
 	txlog.TxLogInfo("Searching...")
 
-    query := strings.TrimSpace(c.DefaultQuery("query", ""))
-    if query == "" {
-        c.Status(http.StatusBadRequest)
-        return 
-    }
+	query := strings.TrimSpace(c.DefaultQuery("query", ""))
+	if query == "" {
+		c.Status(http.StatusBadRequest)
+		return
+	}
 
-	//
-	// movies, err := dbapi.GetDBConnection().GetMoviesFromTitleOrID(query, 15)
-	// if err != nil {
-	// 	if err != sql.ErrNoRows {
-	// 		txlog.TxLogError("Error finding movies from ID or Title '%s'", query)
-	// 	}
-	// } else {
- //        json_movies := []gin.H{}
- //        for _, m := range movies {
- //            json_movies = append(json_movies, m.ToJSON())
- //        }
-	// 	c.JSON(http.StatusOK, gin.H{"results": json_movies})
-	// 	return
-	// }
+	items, err := omdb.OmdbSearch(query)
+	if err != nil {
+		txlog.TxLogError("Error searching OMDb: %s", err.Error())
+		c.Status(http.StatusInternalServerError)
+		return
+	}
 
-    // No we need to query OMDb to fill in gaps in our database
-
-    items, err := omdb.OmdbSearch(query)
-    if err != nil {
-        txlog.TxLogError("Error searching OMDb: %s", err.Error())
-        c.Status(http.StatusInternalServerError)
-        return
-    }
-
-    jsonItems := []gin.H{}
-    for _, item := range items {
-        jsonItems = append(jsonItems, item.ToJson())
-    } 
+	jsonItems := []gin.H{}
+	for _, item := range items {
+		jsonItems = append(jsonItems, item.ToJson())
+	}
 
 	c.JSON(http.StatusOK, jsonItems)
 }

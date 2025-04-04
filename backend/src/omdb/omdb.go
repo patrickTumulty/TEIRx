@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"teirxserver/src/cfg"
-	"teirxserver/src/txlog"
+	"pen_daemon/src/cfg"
+	"pen_daemon/src/txlog"
 )
 
 const OMDB_BASE_URL string = "http://www.omdbapi.com/"

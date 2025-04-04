@@ -1,0 +1,16 @@
+{
+    "database": {
+        "user": "ptumulty",
+        "password": "pass",
+        "ip": "127.0.0.1",
+        "port": "3306",
+        "dbname": "redpendb"
+    },
+    "logging": {
+        "level": "INFO",
+        "filepath": "redpen.log"
+    },
+    "keys": {
+        "omdb": "2b90379"
+    }
+}

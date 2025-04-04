@@ -2,8 +2,8 @@ package core
 
 import (
 	"fmt"
-	"teirxserver/src/txlog"
-	"teirxserver/src/utils"
+	"pen_daemon/src/txlog"
+	"pen_daemon/src/utils"
 )
 
 /**
