@@ -1,26 +1,27 @@
-"use client"; // Ensure this is a Client Component
+"use client"; 
 
-import { useRouter } from "next/navigation";
-import SearchComponent from "./search/search_component";
-
+import { TeirxApi } from "@/core/teirxapi";
+import { useState, useEffect } from 'react';
 export default function Home() {
 
-    const router = useRouter();
+    const [filmData, setFilmData] = useState({})
+    const [loading, setLoading] = useState(true)
 
-    const goToLogin = () => {
-        router.push("/login")
-    };
+    useEffect(() => {
+        TeirxApi.getFeatured().then((response) => {
+            setFilmData(response)
+            setLoading(false)
+        })
+    }, [])
 
-    const goToRegister = () => {
-        router.push("/register_user")
-    };
+    if (loading) {
+        return <div>Loading... </div>
+    }
 
     return (
-        <div>
-            <h1>TEIRx</h1>
-            <button onClick={goToLogin}>Login</button>
-            <button onClick={goToRegister}>Register</button>
-            <SearchComponent/>
+        <div className="featured-film">
+            <h1>{filmData.title} ({filmData.year})</h1>
+            <img src={filmData.poster} />
         </div>
     );
 }

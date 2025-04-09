@@ -9,6 +9,14 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+.featured-film {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
 .register-field {
     padding: 5px;
 }
@@ -77,37 +85,6 @@ body {
     font-weight: normalo
 }
 
-.search-container {
-    max-width: 300px;
-    margin: 20px auto;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    text-align: center;
-}
-
-.search-input {
-    width: 70%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
-}
-
-.search-button {
-    padding: 8px 12px;
-    margin-left: 5px;
-    border: none;
-    background-color: #007bff;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-.search-button:hover {
-    background-color: #0056b3;
-}
 
 .search-results {
     list-style: none;

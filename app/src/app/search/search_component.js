@@ -1,11 +1,23 @@
 'use client'; // Use the client directive to use React hooks
 
-import { useState } from 'react';
-import { useRouter } from "next/navigation";
+import './search_component.css'
+import { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function SearchComponent({ initialText = "" }) {
+    const pathname = usePathname()
     const [query, setQuery] = useState(initialText);
     const router = useRouter();
+
+    useEffect(() => {
+        const match = pathname.match(/^\/search\/(.+)/);
+        if (match && match[1]) {
+            const decoded = decodeURIComponent(match[1]);
+            setQuery(decoded);
+        } else {
+            setQuery('');
+        }
+    }, [pathname]);
 
     const handleSearch = () => {
         if (query === "" || query.toLowerCase() === initialText.toLowerCase()) {

@@ -3,6 +3,7 @@ package core
 import (
 	"database/sql"
 	"math"
+	"math/rand/v2"
 	"net/http"
 	"pen_daemon/src/dbapi"
 	"pen_daemon/src/omdb"
@@ -230,10 +231,49 @@ func handleSearch(c *gin.Context) {
 	c.JSON(http.StatusOK, jsonItems)
 }
 
+func handleGetFeatured(c *gin.Context) {
+
+	featured := []string{
+		"Mickey 17",
+		"Blade Runner",
+		"Interstellar",
+		"Alien",
+		"Dune",
+		"Casino Royale",
+	}
+
+	randomInt := rand.IntN(len(featured))
+
+	film := featured[randomInt]
+
+	items, err := omdb.OmdbSearch(film)
+	if err != nil {
+		txlog.TxLogError("Error searching OMDb for featured: %s", err.Error())
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	if len(items) == 0 {
+		txlog.TxLogError("No films found for query: '%s'", film)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	item := items[0]
+
+	filmData := make(map[string]any)
+	filmData["title"] = item.Title
+	filmData["year"] = item.Year
+	filmData["poster"] = item.Poster
+
+	c.JSON(http.StatusOK, filmData)
+}
+
 func RegisterRoutes(router *gin.Engine) {
 	router.POST("/login", handleLogin)
 	router.POST("/logout", handleLogout)
 	router.POST("/register-user", handleRegisterUser)
 	router.GET("/search", handleSearch)
 	router.GET("/get-film", handleGetFilm)
+	router.GET("/featured", handleGetFeatured)
 }

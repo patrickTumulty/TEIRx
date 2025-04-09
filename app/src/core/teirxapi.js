@@ -45,4 +45,24 @@ export class TeirxApi {
             console.log("Error getting film data: " + error)
         }
     }
+
+    static async getFeatured() {
+        try {
+            const res = await fetch(this.#getUrl(`/featured`), {
+                method: 'GET',
+                headers: {
+                    'content-type': 'application/json'
+                }
+            })
+
+            if (!res.ok) {
+                console.log("Get featured error")
+                return
+            }
+
+            return await res.json()
+        } catch (error) {
+            console.log("Error getting featured film: " + error)
+        }
+    }
 };
